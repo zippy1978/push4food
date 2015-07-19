@@ -1,0 +1,52 @@
+{
+  "name": "push4food",
+  "version": "0.0.1",
+  "description": "Connected button to order food using a Raspberry Pi",
+  "homepage": "https://github.com/zippy1978/push4food",
+  "author": {
+    "name": "Gilles Grousset",
+    "email": "gi.grousset@gmail.com",
+    "url": "https://github.com/zippy1978"
+  },
+  "repository": "zippy1978/push4food",
+  "license": "MIT",
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "keywords": [
+    "iot",
+    "button",
+    "order",
+    "raspberry",
+    "pi"
+  ],
+  "dependencies": {
+    "commander": "^2.7.1",
+    "foodcommander": "0.0.2",
+    "jsonfile": "^2.0.1",
+    "moment": "^2.10.3",
+    "onoff": "^1.0.2",
+    "sleep": "^2.0.0",
+    "state-machine": "0.0.3",
+    "sync-exec": "^0.5.0",
+    "winston": "^1.0.0",
+    "sprintf-js": "^1.0.2"
+  },
+  "devDependencies": {
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-jshint": "^0.11.0",
+    "grunt-contrib-nodeunit": "^0.4.1",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-mocha-cli": "^1.12.0",
+    "jshint-stylish": "^1.0.1",
+    "load-grunt-tasks": "^3.1.0",
+    "time-grunt": "^1.1.0"
+  },
+  "scripts": {
+    "test": "grunt"
+  },
+  "bin": {
+    "push4food": "./bin/push4food"
+  }
+}
