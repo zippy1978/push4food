@@ -22,7 +22,7 @@ Usage of the button is pretty simple:
 
 * a Raspberry Pi (any model)
 * a push button (micro-switch) with a built-in led like this one [http://www.adafruit.com/product/1185](http://www.adafruit.com/product/1185) or this one [http://www.adafruit.com/products/1193](http://www.adafruit.com/products/1193)
-* wiringPi utility command installed to configure GPIO pullupdown (install instructions [here](wiringpi.com/download-and-install/))
+* wiringPi utility command installed to configure GPIO pullupdown (install instructions [here](http://wiringpi.com/download-and-install/))
 * Node.js
 
 ## Installation
