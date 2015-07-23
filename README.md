@@ -18,6 +18,9 @@ Usage of the button is pretty simple:
 
 <p align="center"><img src="doc/usage.png" width="300"></p>
 
+If you want to know more about it, read this post: [
+push4food : a connected button to order pizza](http://www.expertisemobile.com/index.php/2015/07/23/push4food-a-connected-button-to-order-pizza/)
+
 ## Prerequisites
 
 * a Raspberry Pi (any model)
