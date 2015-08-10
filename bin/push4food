@@ -3,183 +3,8 @@
 var pjson = require('../package.json');
 var program = require('commander');
 var winston = require('winston');
-var sprintf = require('sprintf-js').sprintf;
-var stateMachine = require('state-machine');
-var moment = require('moment');
-var jsonfile = require('jsonfile')
-var foodcommander = require('foodcommander');
 
 var push4food = require('../lib/push4food.js');
-
-var PUSH_BLINK_SPEED_MS = 150; // 150ms
-var PUSH_BLINK_COUNT = 4;
-var SECOND_MS = 1000 // 1sec
-
-var orderTemplate;
-var states;
-var button, led;
-var quantity = 0;
-var secondsLeft = 0;
-var estimatedDeliveryDate = null;
-
-var errorInterval = null;
-
-var readOrderTemplate = function(file) {
-
-    orderTemplate = jsonfile.readFileSync(file);
-};
-
-var start = function() {
-
-    winston.info('push4food is starting');
-    
-    if (program.dryrun) {
-        winston.info('Running in dryrun mode: no order will be sent !');   
-    } else {
-        winston.info('Dryrun mode disabled: this is for real baby !');
-    }
-
-    // Init led and button
-    button = push4food.button.create(program.button, PUSH_BLINK_SPEED_MS * PUSH_BLINK_COUNT * 2);
-    led = push4food.led.create(program.led);
-
-    // Init state machine
-    initStates(program);
-
-    // Main loop
-    winston.info('Get ready to get fat !');
-    push4food.button.onPress(button, function() {
-
-        states.push();
-
-        if (states.currentState() === 'ordering') {
-            push4food.led.blink(led, PUSH_BLINK_COUNT, PUSH_BLINK_SPEED_MS);
-            quantity++; 
-            winston.debug(sprintf('Quantity is now %s !', quantity));
-        }
-
-    });
-
-};
-
-var initStates = function(program) {
-
-    states = stateMachine(function () {
-
-        this.state('idle', {initial: true, enter: function() {reset();}})
-            .state('ordering', {enter: function() {startOrderCountDown();}})
-            .state('waitingForDelivery', {enter: function() {startWaitForDeliveryCountDown();}})
-            .state('error', {enter: function() {startErrorIndicator();}})
-
-            .event('push', 'idle', 'ordering')
-            .event('push', 'error', 'idle')
-            .event('orderPlaced', 'ordering', 'waitingForDelivery')
-            .event('orderFailed', 'ordering', 'error')
-            .event('orderDelivered', 'waitingForDelivery', 'idle')
-        ;
-    });
-};
-
-
-var startOrderCountDown = function() {
-
-    secondsLeft = program.countdown;
-
-    winston.debug(sprintf('Order countdown started, %s second(s) left', secondsLeft));
-
-    // Blink
-    push4food.led.blink(led, program.countdown, SECOND_MS / 2);
-
-    var interval = setInterval(function() {
-        secondsLeft--;
-        winston.debug(sprintf('%s second(s) left before ordering...', secondsLeft));
-    }, SECOND_MS);
-
-    setTimeout(function() {
-        clearInterval(interval);
-        placeOrder(program);
-    }, program.countdown * SECOND_MS);
-
-};
-
-var placeOrder = function() {
-    
-    winston.debug('Placing order...');
-
-    var ctx = {
-        franchiseId: orderTemplate.franchiseId,
-        storeId : orderTemplate.storeId,
-        postalCode: orderTemplate.address.postalCode,
-        address: orderTemplate.address
-    };
-
-    var order = {
-        address: ctx.address,
-        lines: [{
-            dish: orderTemplate.dish,
-            variant: orderTemplate.variant,
-            quantity: quantity
-        }],
-        comment: orderTemplate.comment
-    };
-
-    var orderModule = getFoodcommanderModuleForFranchiseId('order', orderTemplate.franchiseId);
-
-    orderModule.place(order, program.dryrun).then(function(orderConfirmation) {
-        
-        estimatedDeliveryDate = orderConfirmation.estimatedDeliveryDate;
-        states.orderPlaced();
-        
-    }).fail(function(error) {
-        
-        winston.error(sprintf('Order failed with error : %s', error));
-        states.orderFailed();
-        
-    });
-
-};
-
-var startWaitForDeliveryCountDown = function() {
-
-    push4food.led.on(led);
-
-    if (estimatedDeliveryDate != null) {
-
-        var secondsToGo = moment(estimatedDeliveryDate).diff(moment(), 'seconds');
-
-        winston.debug(sprintf('Waiting for delivery until %s (%s seconds to go)', estimatedDeliveryDate, secondsToGo));
-
-        setTimeout(function() {
-            states.orderDelivered();
-        }, secondsToGo * SECOND_MS);
-
-
-    } else {
-        states.orderDelivered();
-    }
-
-};
-
-var startErrorIndicator = function() {
-    
-    errorInterval = setInterval(function() {
-        push4food.led.blink(led, 4, SECOND_MS / 8);
-    }, SECOND_MS);
-};
-
-var reset = function() {
-    quantity = 0;  
-    estimatedDeliveryDate = null;
-    clearInterval(errorInterval);
-    push4food.led.off(led);
-};
-
-var exit = function() {
-    winston.info('Exiting...');
-    push4food.button.clear(button);
-    push4food.led.clear(led);
-    process.exit();
-};
 
 var handleError = function(error) {
     console.error(sprintf('[%s] %s', error.name, error.message));
@@ -193,11 +18,18 @@ var checkManadatoryParams = function(program) {
     }
 };
 
-// TODO
-// Ugly fix to get rid off !!!
-var getFoodcommanderModuleForFranchiseId = function(module, franchiseId) {
-    return require(sprintf('../node_modules/foodcommander/lib/franchises/%s/%s.js', franchiseId, module));
+var buildConfig = function(program) {
+  
+    config = new push4food.Config();
+    config.buttonPort = program.button;
+    config.ledPort = program.led;
+    config.countDownSeconds = program.countdown;
+    config.orderTemplateFile = program.order;
+    config.dryrun = program.dryrun;
+    
+    return config;
 };
+
 
 program
     .version(pjson.version)
@@ -217,15 +49,12 @@ if (program.verbose) {
 // Check params
 checkManadatoryParams(program);
 
-// Read order template
-readOrderTemplate(program.order);
-
-// Register shutdown hook
-process.on('SIGINT', exit);
+// Build config object from arguments
+var config = buildConfig(program);
 
 // Start
 try {
-    start(program);
+    push4food.start(config);
 } catch(error) {
     handleError(error);
 }

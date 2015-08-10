@@ -1,6 +1,6 @@
 {
   "name": "push4food",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Connected button to order food using a Raspberry Pi",
   "homepage": "https://github.com/zippy1978/push4food",
   "author": {
