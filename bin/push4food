@@ -3,10 +3,14 @@
 var pjson = require('../package.json');
 var program = require('commander');
 var winston = require('winston');
+var sprintf = require('sprintf-js').sprintf;
 
-var push4food = require('../lib/push4food.js');
+var Config = require('../lib/config.js');
+var CoreService = require('../lib/coreService.js');
+var BluetoothService = require('../lib/bluetoothService.js');
 
 var handleError = function(error) {
+    
     console.error(sprintf('[%s] %s', error.name, error.message));
     process.exit(1);
 };
@@ -20,7 +24,7 @@ var checkManadatoryParams = function(program) {
 
 var buildConfig = function(program) {
   
-    config = new push4food.Config();
+    config = new Config();
     config.buttonPort = program.button;
     config.ledPort = program.led;
     config.countDownSeconds = program.countdown;
@@ -54,7 +58,13 @@ var config = buildConfig(program);
 
 // Start
 try {
-    push4food.start(config);
+    
+    var coreService = new CoreService(config);
+    coreService.start();
+    
+    var bluetoothService = new BluetoothService();
+    bluetoothService.start();
+    
 } catch(error) {
     handleError(error);
 }

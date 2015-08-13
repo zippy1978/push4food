@@ -28,6 +28,11 @@ push4food : a connected button to order pizza](http://www.expertisemobile.com/in
 * wiringPi utility command installed to configure GPIO pullupdown (install instructions [here](http://wiringpi.com/download-and-install/))
 * Node.js
 
+For Bluetooth support, install the follwing packages (on Raspbian) : 
+
+	sudo apt-get install bluetooth bluez-utils libbluetooth-dev
+
+
 ## Installation
 
 	npm install push4food -g
