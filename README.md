@@ -30,7 +30,7 @@ push4food : a connected button to order pizza](http://www.expertisemobile.com/in
 
 For Bluetooth support, install the follwing packages (on Raspbian) : 
 
-	sudo apt-get install bluetooth bluez-utils libbluetooth-dev
+	sudo apt-get install bluetooth bluez-utils libbluetooth-dev bluez
 
 
 ## Installation
